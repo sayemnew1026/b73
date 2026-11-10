@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project B-78 | Research Log</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --primary-color: #2c3e50;
+            --accent-color: #e74c3c;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        /* গোপন সিক্রেট বাটন */
+        #secret-trigger {
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        h2 { border-bottom: 2px solid var(--primary-color); padding-bottom: 5px; color: var(--primary-color); }
+        
+        /* লগইন পপআপ */
+        #login-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            z-index: 1000;
+            width: 300px;
+        }
+        #login-modal input, #admin-panel select, #admin-panel input, #admin-panel textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-danger { background-color: var(--accent-color); margin-top: 5px;}
+        #admin-panel { display: none; background: #eef2f3; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        
+        /* প্রোগ্রেস বার */
+        .progress-container {
+            background-color: #ddd;
+            border-radius: 20px;
+            margin: 15px 0;
+        }
+        .progress-bar {
+            background-color: #2ecc71;
+            color: white;
+            padding: 5px;
+            text-align: center;
+            font-size: 12px;
+            border-radius: 20px;
+            width: 0%;
+            transition: width 0.5s;
+        }
+        .log-item {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 15px;
+            margin-bottom: 20px;
+            background: #fafafa;
+            padding: 10px;
+            border-radius: 0 8px 8px 0;
+        }
+        .date-badge { font-weight: bold; color: var(--accent-color); }
+        .hidden-log { background: #ffe6e6; border-left-color: var(--accent-color); }
+        .hidden-badge { background: #e74c3c; color: white; padding: 2px 6px; font-size: 10px; border-radius: 3px; margin-left: 10px; }
+        .link-list a { color: #3498db; text-decoration: none; display: block; margin: 5px 0; }
+        .link-list a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Project B-78: Research Dashboard</h1>
+        <p>বর্জ্য মিষ্টির শিরা থেকে বায়োফুয়েল উৎপাদন ও পরিবেশগত পর্যবেক্ষণ</p>
+        <div id="secret-trigger" onclick="handleSecretClick()"></div>
+    </header>
+
+    <!-- অ্যাডমিন প্যানেল -->
+    <div id="admin-panel" class="card">
+        <h2>অ্যাডমিন কন্ট্রোল প্যানেল (গবেষক মোড)</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <h3>নতুন লগ যুক্ত করুন</h3>
+                <label>তারিখ:</label>
+                <input type="date" id="input-date">
+                <label>লিটারেচার রিভিউ / কাজের বিবরণ:</label>
+                <textarea id="input-desc" rows="4" placeholder="আজকে কি কাজ করলেন বা কি লিটারেচার পড়লেন..."></textarea>
+                <label>দৃশ্যমানতা (Privacy):</label>
+                <select id="input-privacy">
+                    <option value="public">পাবলিক (সবাই দেখবে)</option>
+                    <option value="hidden">হাইড/গোপন (শুধু আপনি লগইন করলে দেখবেন)</option>
+                </select>
+                <button class="btn" onclick="saveLog()">আপডেট করুন</button>
+            </div>
+            <div>
+                <h3>গবেষণার ধাপ ও লিংক আপডেট</h3>
+                <label>গবেষণার বর্তমান ধাপ (%):</label>
+                <input type="number" id="input-progress" min="0" max="100" placeholder="যেমন: ৪৫">
+                <label>গুরুত্বপূর্ণ সোর্স লিংক:</label>
+                <input type="text" id="input-link-title" placeholder="লিংকের নাম বা সোর্স">
+                <input type="url" id="input-link-url" placeholder="https://example.com">
+                <button class="btn" onclick="saveMeta()">মেটা ডেটা আপডেট করুন</button>
+                <button class="btn btn-danger" onclick="logout()" style="margin-top: 20px;">লগআউট করুন</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- মূল পাবলিক ভিউ গ্রিড -->
+    <div class="grid">
+        <div>
+            <div class="card">
+                <h2>গবেষণা ও লিটারেচার রিভিউ লগ</h2>
+                <div id="logs-container"></div>
+            </div>
+        </div>
+
+        <div>
+            <div class="card">
+                <h2>গবেষণার বর্তমান ধাপ</h2>
+                <div class="progress-container">
+                    <div id="progress-bar-view" class="progress-bar">0%</div>
+                </div>
+                <p id="progress-text">কাজ প্রাথমিক পর্যায়ে রয়েছে।</p>
+            </div>
+
+            <div class="card">
+                <h2>গুরুত্বপূর্ণ সোর্স ও লিংকসমূহ</h2>
+                <div id="links-container" class="link-list"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- গোপন লগইন উইন্ডো -->
+<div id="login-modal">
+    <h3>গবেষক লগইন</h3>
+    <label>আইডি (Username):</label>
+    <input type="text" id="login-user">
+    <label>পাসওয়ার্ড:</label>
+    <input type="password" id="login-pass">
+    <button class="btn" onclick="attemptLogin()">লগইন</button>
+    <button class="btn btn-danger" onclick="closeLoginModal()">বন্ধ করুন</button>
+</div>
+
+<script>
+    // ডিফল্ট লগইন ক্রেডেনশিয়াল
+    const ADMIN_USER = "admin";
+    const ADMIN_PASS = "b78secret";
+
+    let clickCount = 0;
+    let isLoggedIn = false;
+
+    // লোকাল স্টোরেজ থেকে ডেটা লোড করা
+    let researchData = JSON.parse(localStorage.getItem('researchData')) || {
+        progress: 30,
+        logs: [
+            { date: "2026-11-01", desc: "মিষ্টির শিরার কেমিক্যাল কম্পজিশন এবং উচ্চ সুগারের কারণে পানিতে ব্যাকটেরিয়ার হাইপক্সিয়া তৈরির প্রক্রিয়া নিয়ে লিটারেচার রিভিউ সম্পন্ন।", privacy: "public" },
+            { date: "2026-11-05", desc: "গোপন নোট: বরিশালের ৩টি বড় মিষ্টির দোকানের মালিকদের সাথে কথা হয়েছে, তারা বর্জ্য সরবরাহ করতে রাজি।", privacy: "hidden" }
+        ],
+        links: [
+            { title: "Google Scholar - Bioethanol from Waste", url: "https://scholar.google.com" }
+        ]
+    };
+
+    // সিক্রেট বাটন ক্লিক লজিক
+    function handleSecretClick() {
+        clickCount++;
+        const dot = document.getElementById('secret-trigger');
+        
+        if (clickCount === 1) {
+            dot.style.backgroundColor = "yellow";
+        } else if (clickCount === 2) {
+            dot.style.backgroundColor = "green";
+        } else if (clickCount === 3) {
+            dot.style.backgroundColor = "red";
+        } else if (clickCount === 4) {
+            document.getElementById('login-modal').style.display = 'block';
+            resetSecretDot();
+        }
+    }
+
+    function resetSecretDot() {
+        clickCount = 0;
+        document.getElementById('secret-trigger').style.backgroundColor = "white";
+    }
+
+    function closeLoginModal() {
+        document.getElementById('login-modal').style.display = 'none';
+        resetSecretDot();
+    }
+
+    function attemptLogin() {
+        const u = document.getElementById('login-user').value;
+        const p = document.getElementById('login-pass').value;
+
+        if (u === ADMIN_USER && p === ADMIN_PASS) {
+            isLoggedIn = true;
+            document.getElementById('login-modal').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'block';
+            renderDashboard();
+            alert("সফলভাবে লগইন হয়েছে!");
+        } else {
+            alert("ভুল আইডি বা পাসওয়ার্ড!");
+        }
+    }
+
+    function logout() {
+        isLoggedIn = false;
+        document.getElementById('admin-panel').style.display = 'none';
+        renderDashboard();
+    }
+
+    function saveLog() {
+        const date = document.getElementById('input-date').value;
+        const desc = document.getElementById('input-desc').value;
+        const privacy = document.getElementById('input-privacy').value;
+
+        if(!date || !desc) return alert("তারিখ এবং বিবরণ পূরণ করুন।");
+
+        researchData.logs.unshift({ date, desc, privacy });
+        updateLocalStorage();
+        document.getElementById('input-desc').value = '';
+    }
+
+    function saveMeta() {
+        const prog = document.getElementById('input-progress').value;
+        const linkTitle = document.getElementById('input-link-title').value;
+        const linkUrl = document.getElementById('input-link-url').value;
+
+        if (prog) researchData.progress = parseInt(prog);
+        
+        if (linkTitle && linkUrl) {
+            researchData.links.push({ title: linkTitle, url: linkUrl });
+            document.getElementById('input-link-title').value = '';
+            document.getElementById('input-link-url').value = '';
+        }
+
+        updateLocalStorage();
+    }
+
+    function updateLocalStorage() {
+        localStorage.setItem('researchData', JSON.stringify(researchData));
+        renderDashboard();
+    }
+
+    function renderDashboard() {
+        // প্রোগ্রেস বার ভিউ আপডেট
+        const pBar = document.getElementById('progress-bar-view');
+        pBar.style.width = researchData.progress + '%';
+        pBar.innerText = researchData.progress + '%';
+        document.getElementById('progress-text').innerText = `গবেষণার ধাপ অনুযায়ী কাজ ${researchData.progress}% শেষ হয়েছে।`;
+
+        // লগ কন্টেইনার আপডেট (পাবলিক এবং হাইড ফিল্টারিং)
+        const logContainer = document.getElementById('logs-container');
+        logContainer.innerHTML = '';
+
+        // তারিখ অনুযায়ী ডেটা সাজানো (নতুনগুলো আগে থাকবে)
+        researchData.logs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        researchData.logs.forEach(log => {
+            // যদি লগটি hidden বা গোপন থাকে এবং ইউজার লগইন করা না থাকে, তবে তা স্ক্রিনে দেখাবে না
+            if (log.privacy === 'hidden' && !isLoggedIn) return;
+
+            const div = document.createElement('div');
+            div.className = `log-item ${log.privacy === 'hidden' ? 'hidden-log' : ''}`;
+            
+            div.innerHTML = `
+                <span class="date-badge">${log.date}</span>
+                ${log.privacy === 'hidden' ? '<span class="hidden-badge">গোপন নোট</span>' : ''}
+                <p>${log.desc}</p>
+            `;
+            logContainer.appendChild(div);
+        });
+
+        // সোর্স লিংক কন্টেইনার আপডেট
+        const linkContainer = document.getElementById('links-container');
+        linkContainer.innerHTML = '';
+        researchData.links.forEach(link => {
+            const a = document.createElement('a');
+            a.href = link.url;
+            a.target = "_blank";
+            a.innerText = "🔗 " + link.title;
+            linkContainer.appendChild(a);
+        });
+    }
+
+    // ওয়েবসাইটটি ব্রাউজারে প্রথমবার ওপেন হলে ডেটা রেন্ডার করার জন্য কল
+    renderDashboard();
+</script>
+</body>
+</html>
